@@ -1,4 +1,4 @@
-# Sistema de Afiliaciones - Comfa
+# Sistema de Afiliaciones - Comfa (Work In Progress)
 
 Aplicación web para gestionar afiliaciones de trabajadores y beneficiarios.
 
