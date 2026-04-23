@@ -17,6 +17,8 @@ Aplicación web para gestionar afiliaciones de trabajadores y beneficiarios.
 ## Por terminar...
 - Integración OCR
 - Validación automática de documentos
+- Opciones de Login
+- General Bug-fixes
 
 ## Como Ejecutar Programa
 
