@@ -3,6 +3,10 @@ import cors from "cors";
 import mongoose from "mongoose";
 import multer from "multer";
 import Afiliacion from "./models/Afiliacion.js";
+import Tesseract from "tesseract.js";
+// Remember to give "Sharp" a try, it can help with image preprocessing before OCR, improving accuracy significantly.
+
+/* INTENTO CONEXION OCR TESSERACT*/
 
 const storage = multer.diskStorage({
   destination: "uploads/",
@@ -19,7 +23,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-/* CONEXIÓN A MONGO */
+// CONEXIÓN A MONGO DB
 mongoose.connect("mongodb://127.0.0.1:27017/afiliaciones")
   .then(() => console.log("Mongo conectado"))
   .catch(err => console.log(err));
@@ -38,6 +42,40 @@ app.post("/afiliacion",
   async (req, res) => {
 
     try {
+
+      const rutaCedula = req.files.cedula?.[0]?.path;
+
+      let textoOCR = "";
+      let cedulaExtraida = "";
+      let nombreExtraido = "";
+
+      if (rutaCedula) {
+
+        const resultado = await Tesseract.recognize(
+          rutaCedula,
+          "spa"
+        );
+
+        textoOCR = resultado.data.text;
+
+        console.log("=== TEXTO OCR ===");
+        console.log(textoOCR);
+
+        // EXTRAER DATOS
+        const matchCedula = textoOCR.match(/\d{3}\.?\d{3}\.?\d{3}/);
+
+        nombreExtraido = textoOCR;
+
+        cedulaExtraida = matchCedula?.[0] || "";
+
+        console.log("=== DATOS EXTRAIDOS ===");
+
+        console.log({
+          cedula: cedulaExtraida,
+          nombre: nombreExtraido
+        });
+      }
+
       const nueva = new Afiliacion({
         nombre: req.body.nombre,
         cedula: req.body.cedula,
@@ -53,11 +91,23 @@ app.post("/afiliacion",
 
       await nueva.save();
 
-      res.json({ mensaje: "Afiliación guardada correctamente" });
+      res.json({
+        mensaje: "Afiliación procesada",
+
+        ocr: {
+          texto: textoOCR,
+          cedula: cedulaExtraida,
+          nombre: nombreExtraido
+        }
+      });
 
     } catch (error) {
+
       console.error(error);
-      res.status(500).json({ error: "Error al guardar" });
+
+      res.status(500).json({
+        error: "Error al guardar"
+      });
     }
 });
 

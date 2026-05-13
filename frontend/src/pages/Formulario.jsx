@@ -60,7 +60,12 @@ function Formulario() {
       const data = await res.json();
       console.log(data);
 
-      navigate("/validacion");
+      navigate("/validacion", {
+        state: {
+          formulario: formData,
+          ocr: data.ocr
+        }
+      });
 
     } catch (error) {
       console.error("Error:", error);
@@ -130,7 +135,7 @@ function Formulario() {
 
         <h3>Documentos</h3>
 
-        <label>Cédula (PNG/PDF)</label>
+        <label>Cédula (PNG/PDF) #Uso en Pruebas</label>
         <input type="file" style={inputStyle} onChange={(e) => setCedulaFile(e.target.files[0])} />
 
         <label>Certificado escolar</label>

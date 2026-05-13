@@ -1,15 +1,29 @@
-import { useLocation } from "react-router-dom";
 import { FaFacebook, FaInstagram, FaTwitter, FaLinkedin, FaWhatsapp } from "react-icons/fa";
+import { useLocation } from "react-router-dom";
+
+const limpiarTexto = (texto) => {
+  return texto
+    ?.toString()
+    .replace(/\./g, "")
+    .replace(/\s/g, "")
+    .trim()
+    .toLowerCase();
+};
+
+const comparar = (a, b) => {
+  return limpiarTexto(a) === limpiarTexto(b);
+};
+
+const estiloComparacion = (a, b) => ({ // Si coinciden, verde; si no, rojo --- Considerar quitar*/
+  color: comparar(a, b) ? "green" : "red",
+  fontWeight: "bold"
+});
 
 function Validacion() {
   const location = useLocation();
-  const data = location.state || {};
 
-  const ocrData = {
-    nombre: data.nombre,
-    cedula: data.cedula,
-    tipoAfiliado: data.tipoAfiliado,
-  };
+  const formulario = location.state?.formulario;
+  const ocr = location.state?.ocr;
 
   return (
     <div>
@@ -45,19 +59,30 @@ function Validacion() {
       </nav>
 
       <div style={{ padding: "2rem", display: "flex", gap: "2rem", justifyContent: "center" }}>
-        
+  
+        {/* DATOS MANUALES */}
         <div style={cardStyle}>
           <h3>Datos ingresados</h3>
-          <p><b>Nombre:</b> {data.nombre}</p>
-          <p><b>Cédula:</b> {data.cedula}</p>
-          <p><b>Tipo:</b> {data.tipoAfiliado}</p>
+          <p><b>Nombre:</b> {formulario?.nombre}</p>
+          <p><b>Cédula:</b> {formulario?.cedula}</p>
+          <p><b>Tipo:</b> {formulario?.tipoAfiliacion}</p>
         </div>
 
+        {/* DATOS OCR + VALIDACIÓN */}
         <div style={cardStyle}>
           <h3>Datos OCR</h3>
-          <p><b>Nombre:</b> {ocrData.nombre}</p>
-          <p><b>Cédula:</b> {ocrData.cedula}</p>
-          <p><b>Tipo:</b> {ocrData.tipoAfiliado}</p>
+
+          <p style={estiloComparacion(formulario?.nombre, ocr?.nombre)}>
+            <b>Nombre:</b> {ocr?.nombre} {comparar(formulario?.nombre, ocr?.nombre) ? "✔" : "✖"}
+          </p>
+
+          <p style={estiloComparacion(formulario?.cedula, ocr?.cedula)}>
+            <b>Cédula:</b> {ocr?.cedula} {comparar(formulario?.cedula, ocr?.cedula) ? "✔" : "✖"}
+          </p>
+
+          <p>
+            <b>Tipo:</b> {ocr?.tipoAfiliacion || "No detectado"}
+          </p>
         </div>
 
       </div>
