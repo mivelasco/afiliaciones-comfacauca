@@ -1,0 +1,23 @@
+services:
+
+  mongo:
+    image: mongo:8
+    container_name: comfacauca-mongo
+
+    volumes:
+      - mongo_data:/data/db
+
+
+  backend:
+    build: ./backend
+    container_name: comfacauca-backend
+
+    ports:
+      - "3000:3000"
+
+    depends_on:
+      - mongo
+
+
+volumes:
+  mongo_data:

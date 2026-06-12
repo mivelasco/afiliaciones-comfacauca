@@ -24,7 +24,7 @@ app.use(cors());
 app.use(express.json());
 
 // CONEXIÓN A MONGO DB
-mongoose.connect("mongodb://127.0.0.1:27017/afiliaciones")
+mongoose.connect("mongodb://mongo:27017/afiliaciones")
   .then(() => console.log("Mongo conectado"))
   .catch(err => console.log(err));
 
