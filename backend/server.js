@@ -4,7 +4,9 @@ import mongoose from "mongoose";
 import multer from "multer";
 import Afiliacion from "./models/Afiliacion.js";
 import Tesseract from "tesseract.js";
-// Remember to give "Sharp" a try, it can help with image preprocessing before OCR, improving accuracy significantly.
+import { fromPath } from "pdf2pic";
+import sharp from "sharp"; // Remember to give "Sharp" a try, it can help with image preprocessing before OCR, improving accuracy significantly.
+import path from "path";
 
 /* INTENTO CONEXION OCR TESSERACT*/
 
@@ -43,7 +45,16 @@ app.post("/afiliacion",
 
     try {
 
-      const rutaCedula = req.files.cedula?.[0]?.path;
+      const archivo = req.files.cedula?.[0];
+      let rutaCedula = archivo?.path;
+
+      /** DEBUG: Información del archivo recibido */
+      console.log("=== INFORMACIÓN DEL ARCHIVO RECIBIDO ===");
+      console.log("Archivo:", archivo);
+      console.log("Tipo de archivo:", archivo.mimetype);
+      console.log("Archivo recibido:", archivo?.originalname);
+      console.log("Mimetype:", archivo?.mimetype);
+      console.log("Ruta inicial:", rutaCedula);
 
       let textoOCR = "";
       let cedulaExtraida = "";
@@ -51,29 +62,68 @@ app.post("/afiliacion",
 
       if (rutaCedula) {
 
-        const resultado = await Tesseract.recognize(
-          rutaCedula,
-          "spa"
-        );
+        if (archivo.mimetype === "application/pdf") {
 
-        textoOCR = resultado.data.text;
+          console.log("Convirtiendo PDF a imagen...");
 
-        console.log("=== TEXTO OCR ===");
-        console.log(textoOCR);
+          const convert = fromPath(rutaCedula, {
+            density: 300,
+            saveFilename: "pdf_convertido",
+            savePath: "./uploads",
+            format: "png",
+            width: 2000,
+            height: 2000
+          });
 
-        // EXTRAER DATOS
-        const matchCedula = textoOCR.match(/\d{3}\.?\d{3}\.?\d{3}/);
+          const pagina = await convert(1);
 
-        nombreExtraido = textoOCR;
+          rutaCedula = pagina.path;
 
-        cedulaExtraida = matchCedula?.[0] || "";
+          console.log("PDF convertido:", rutaCedula);
 
-        console.log("=== DATOS EXTRAIDOS ===");
+        } 
+        
+        try {
 
-        console.log({
-          cedula: cedulaExtraida,
-          nombre: nombreExtraido
-        });
+          console.log("OCR usando archivo:", rutaCedula);
+          
+          const resultado = await Tesseract.recognize(
+            rutaCedula,
+            "spa+eng"
+          );
+
+          textoOCR = resultado.data.text;
+
+          console.log("Confianza OCR:", resultado.data.confidence);
+
+          console.log("=== TEXTO OCR ===");
+          console.log(textoOCR);
+
+          // EXTRAER DATOS
+          const matchCedula = textoOCR.match(/\d{3}\.?\d{3}\.?\d{3}/);
+
+          nombreExtraido = textoOCR;
+
+          cedulaExtraida = matchCedula?.[0] || "";
+
+          console.log("=== DATOS EXTRAIDOS ===");
+
+          console.log({
+            cedula: cedulaExtraida,
+            nombre: nombreExtraido
+          });
+
+        } catch (error) {
+
+          console.log("=== ERROR OCR ===");
+          console.error(error);
+
+          textoOCR = "";
+          nombreExtraido = "";
+          cedulaExtraida = "";
+
+        }
+
       }
 
       const nueva = new Afiliacion({
