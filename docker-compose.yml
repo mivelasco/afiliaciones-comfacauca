@@ -19,5 +19,16 @@ services:
       - mongo
 
 
+  frontend:
+    build: ./frontend
+    container_name: comfacauca-frontend
+
+    ports:
+      - "5173:5173"
+
+    depends_on:
+      - backend
+
+
 volumes:
   mongo_data:
