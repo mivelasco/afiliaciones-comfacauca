@@ -6,7 +6,7 @@ import Afiliacion from "./models/Afiliacion.js";
 import Tesseract from "tesseract.js";
 import { fromPath } from "pdf2pic";
 import sharp from "sharp"; // Remember to give "Sharp" a try, it can help with image preprocessing before OCR, improving accuracy significantly.
-import path from "path";
+//import path from "path";
 
 /* INTENTO CONEXION OCR TESSERACT*/
 
@@ -85,26 +85,67 @@ app.post("/afiliacion",
         
         try {
 
+          const rutaProcesada = "uploads/procesada.png";
+
+          await sharp(rutaCedula)
+            .grayscale()
+            .threshold(150)
+            //.normalise()
+            .sharpen()
+            .png()
+            .toFile(rutaProcesada);
+
+          rutaCedula = rutaProcesada;
+
+          console.log("Imagen procesada:", rutaCedula);
+
           console.log("OCR usando archivo:", rutaCedula);
           
           const resultado = await Tesseract.recognize(
             rutaCedula,
-            "spa+eng"
+            "spa"
           );
 
           textoOCR = resultado.data.text;
+
+          const textoOriginal = textoOCR;
+
+          textoOCR = textoOCR
+            .replace(/[|._»«"“”]/g, " ")
+            .replace(/\d+/g, " ")
+            .replace(/\s+/g, " ");
+          
+          const matchCedula = textoOriginal.match(/\d[\d.\s]{7,15}\d/);
+
+          cedulaExtraida = matchCedula?.[0]
+            .replace(/\s/g, "")
+            || "";
+
+          const palabras = textoOCR.match(/[A-ZÁÉÍÓÚÑ]{3,}/g) || [];
+
+          console.log("=== PALABRAS ===");
+          console.log(palabras);
+
+          const ignorar = [
+            "REPÚBLICA",
+            "COLOMBIA",
+            "IDENTIFICACIÓN",
+            "PERSONAL",
+            "CÉDULA",
+            "CIUDADANÍA",
+            "APELLIDOS"
+          ];
+
+          const nombres = palabras.filter(
+            palabra => !ignorar.includes(palabra)
+          );
+
+          nombreExtraido = nombres.join(" ");
 
           console.log("Confianza OCR:", resultado.data.confidence);
 
           console.log("=== TEXTO OCR ===");
           console.log(textoOCR);
-
-          // EXTRAER DATOS
-          const matchCedula = textoOCR.match(/\d{3}\.?\d{3}\.?\d{3}/);
-
-          nombreExtraido = textoOCR;
-
-          cedulaExtraida = matchCedula?.[0] || "";
 
           console.log("=== DATOS EXTRAIDOS ===");
 
